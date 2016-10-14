@@ -1,0 +1,34 @@
+{
+  "name": "sails-hook-zkconfig",
+  "version": "1.0.0",
+  "description": "sails hook for loading config from zookeeper synchronously",
+  "main": "index.js",
+  "dependencies": {
+    "co": "^4.6.0",
+    "concat-stream": "^1.5.2",
+    "debug": "^2.2.0",
+    "lodash": "^4.16.2",
+    "node-zookeeper-client": "^0.2.2",
+    "promise.ify": "^0.3.0"
+  },
+  "devDependencies": {
+    "coveralls": "^2.11.14",
+    "eslint": "^3.7.0",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.1.2",
+    "rewire": "^2.5.2",
+    "sails": "^0.12.7",
+    "should": "^11.1.0",
+    "sinon": "^1.17.6"
+  },
+  "scripts": {
+    "check": "./node_modules/.bin/eslint .",
+    "test": "mocha test/",
+    "test-travis": "node --harmony node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha --report lcovonly -- --reporter dot"
+  },
+  "author": "Wenjun.Xiao",
+  "license": "MIT",
+  "sails": {
+    "isHook": true
+  }
+}
