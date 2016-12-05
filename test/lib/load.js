@@ -202,4 +202,29 @@ describe('Synchronous loading of zookeeper config', function() {
     }));
   });
 
+  it('zkOverride', function() {
+    let remoteConf = {
+      host: '127.0.0.1',
+      port: '6666',
+      pwd: 'xxxxx'
+    };
+    fakeChild.stdout = JSON.stringify({
+      success: true,
+      data: {
+        '/test/path': remoteConf
+      },
+      warn: {}
+    });
+    let localConf = {
+      zkPath: '/test/path',
+      other: '_other_local_value_',
+      zkOverride: {
+        host: '0.0.0.0'
+      }
+    };
+    load(localConf, 'servers').should.eql(_.assign(_.omit(localConf, 'zkPath'), remoteConf, {
+      host: '0.0.0.0'
+    }));
+  });
+
 });

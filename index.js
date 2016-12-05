@@ -60,7 +60,13 @@ module.exports = function(sails) {
       let zkObjKey = sails.config.zkObjKey || config.zkObjKey;
       debug('load zkConfig start: %s %s %s %s', zkHost, zkKeys, zkObjKey, config.timeout);
       try {
+        if(_.isFunction(config.before)){
+          config.before(sails.config);
+        }
         require('./lib/load')(sails.config, zkHost, zkKeys, zkObjKey, config.timeout, sails);
+        if(_.isFunction(config.after)){
+          config.after(sails.config);
+        }
       } catch (err) {
         /* istanbul ignore next */
         throw new Error('load zkConfig failed\n' + (err.stack || err.message || err));

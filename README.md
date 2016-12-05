@@ -82,7 +82,33 @@ module.exports = {
 ```
   Use `zkKeys` to specify the key need to updated and the key's value is zookeeper path,
   it is the difference with `zkPath` is that the value just set to the key and won't be assigned to parent.
-  `zkKeys`
+  `zkKeys`.
+
+  When use `zkPath` and the value is json object, there is a way to override some key's value. Such as,
+  `/config/mysql` set as `{adapter: "sails-mysql", "host": "127.0.0.1", database: "test"}`, and want to
+  use a special adapter `sails-mysql-override` in one project.
+```javascript
+module.exports = {
+  mysql: {
+    zkPath: '/config/mysql',
+    zkOverride: {
+      adapter: 'sails-mysql-override'
+    }
+  }
+};
+```
+  Configuration after updated.
+```javascript
+module.exports = {
+  mysql: {
+   adapter: 'sails-mysql-override',
+   host: '127.0.0.1',
+   database: 'test'
+  }
+};
+```
+  Of course, you can also use hook in `zkConfig.js` to change key value before/after load.
+
 
 ## Configuration
 
@@ -93,7 +119,13 @@ module.exports.zkConfig = {
   enabled: true, // Enable zkConfig. Defaults to `true`
   zkKeys: ['appKey1'], // Keys to be updated.
   zkObjKey: 'zkPath', // Change the default `zkPath`
-  zkHost: '127.0.0.1:2181,192.168.0.1:2181' // Zookeeper server list
+  zkHost: '127.0.0.1:2181,192.168.0.1:2181', // Zookeeper server list,
+  before: function(config) { // hook before load config from zookeeper
+
+  },
+  after: function(config){ // hook after load config from zookeeper
+
+  }
 };
 ```
   You can also config ``zkKeys`` as follow
