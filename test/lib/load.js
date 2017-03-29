@@ -222,9 +222,67 @@ describe('Synchronous loading of zookeeper config', function() {
         host: '0.0.0.0'
       }
     };
-    load(localConf, 'servers').should.eql(_.assign(_.omit(localConf, 'zkPath'), remoteConf, {
+    let expectConf =_.assign(_.omit(localConf, ['zkPath', 'zkOverride']), remoteConf, {
       host: '0.0.0.0'
-    }));
+    });
+    load(localConf, 'servers').should.eql(expectConf);
   });
 
+  describe('zkDefault', ()=>{
+
+    it('use default', function() {
+      let remoteConf = {
+        host: '127.0.0.1',
+        port: 6379
+      };
+      fakeChild.stdout = JSON.stringify({
+        success: true,
+        data: {},
+        warn: {
+          '/test/path': 'does not exist'
+        }
+      });
+      let localConf = {
+        zkPath: '/test/path',
+        other: '_other_local_value_',
+        zkDefault: {
+          host: '127.0.0.1',
+          port: 6379
+        }
+      };
+      let expectConf = _.assign(_.omit(localConf, ['zkPath', 'zkDefault']), remoteConf, {
+        host: '127.0.0.1'
+      });
+      load(localConf, 'servers').should.eql(expectConf);
+    });
+
+    it('use data', function() {
+      let remoteConf = {
+        host: '127.0.0.1',
+        port: '6666',
+        pwd: 'xxxxx'
+      };
+      fakeChild.stdout = JSON.stringify({
+        success: true,
+        data: {
+          '/test/path': remoteConf
+        },
+        warn: {}
+      });
+      let localConf = {
+        zkPath: '/test/path',
+        other: '_other_local_value_',
+        zkDefault: {
+          host: '127.0.0.1',
+          port: 6379,
+          password: 'default'
+        }
+      };
+      let expectConf = _.assign(_.omit(localConf, ['zkPath', 'zkDefault']), remoteConf, {
+        host: '127.0.0.1',
+        password: 'default'
+      });
+      load(localConf, 'servers').should.eql(expectConf);
+    });
+  });
 });

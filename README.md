@@ -85,7 +85,7 @@ module.exports = {
   `zkKeys`.
 
   When use `zkPath` and the value is json object, there is a way to override some key's value. Such as,
-  `/config/mysql` set as `{adapter: "sails-mysql", "host": "127.0.0.1", database: "test"}`, and want to
+  `/config/mysql` set as `{"adapter": "sails-mysql", "host": "127.0.0.1", "database": "test"}`, and want to
   use a special adapter `sails-mysql-override` in one project.
 ```javascript
 module.exports = {
@@ -105,6 +105,34 @@ module.exports = {
    host: '127.0.0.1',
    database: 'test'
   }
+};
+```
+  Use `zkDefault` to specify default config.
+```js
+module.exports = {
+  mysql: {
+    zkPath: '/config/mysql',
+    zkDefault: {
+      adapter: 'sails-mysql-default',
+      password: 'default_pwd'
+    }
+  },
+  secret: {
+    zkPath: '/config/secret',
+    zkDefault: '__this_is_default_secret__'
+  }
+};
+```
+  Configuration after updated when `/config/mysql` set as `{"host": "127.0.0.1", database: "test"}`.
+```javascript
+module.exports = {
+  mysql: {
+   adapter: 'sails-mysql-default',
+   host: '127.0.0.1',
+   database: 'test',
+   password: 'default_pwd'
+  },
+  secret: '__this_is_default_secret__'
 };
 ```
   Of course, you can also use hook in `zkConfig.js` to change key value before/after load.
@@ -138,5 +166,19 @@ module.exports.zkConfig = {
 ```javascript
 module.exports.zkConfig = {
   zkKeys: ['appKey1', {appKey2: '/config/same/key2'}]
+};
+```
+
+## Cache
+
+  Cache config when load successfully, and then load config from cache when failed to load config.
+```javascript
+module.exports.zkConfig = {
+  zkCache: {
+    enabled: false, // default false
+    directory: process.env.HOME, // where cache to store
+    filename: '', // cache filename
+    secret: '' // encryption key
+  }
 };
 ```

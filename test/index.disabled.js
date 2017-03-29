@@ -18,7 +18,8 @@ describe('Disable hook tests ::', function() {
       },
       zkConfig: {
         enabled: false
-      }
+      },
+      port: '0'
     }, function(err, _sails) {
       if (err) return done(err);
       // console.log("_sails=====>", _sails.config);

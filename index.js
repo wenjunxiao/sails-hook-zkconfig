@@ -33,6 +33,12 @@ function keysToArray(keys) {
   return keys;
 }
 
+function runConfig(fn, config) {
+  if(_.isFunction(fn)){
+    fn(config);
+  }
+}
+
 module.exports = function(sails) {
   return {
     defaults: {
@@ -40,7 +46,8 @@ module.exports = function(sails) {
         enabled: true,
         timeout: 30000,
         zkObjKey: 'zkPath',
-        zkKeys: []
+        zkKeys: [],
+        zkCache: require('./lib/cache')
       }
     },
     configure: function configure() {
@@ -49,7 +56,7 @@ module.exports = function(sails) {
       let reg = new RegExp('^' + configKey.toLowerCase() + '$', 'i');
       let keys = Object.keys(sails.config).filter(k => reg.test(k) && k !== configKey);
       keys.forEach(function(key) {
-        _.assign(config, sails.config[key]);
+        _.merge(config, sails.config[key]);
       });
       if (!config.enabled) {
         debug('load zkConfig disabled.');
@@ -60,13 +67,9 @@ module.exports = function(sails) {
       let zkObjKey = sails.config.zkObjKey || config.zkObjKey;
       debug('load zkConfig start: %s %s %s %s', zkHost, zkKeys, zkObjKey, config.timeout);
       try {
-        if(_.isFunction(config.before)){
-          config.before(sails.config);
-        }
-        require('./lib/load')(sails.config, zkHost, zkKeys, zkObjKey, config.timeout, sails);
-        if(_.isFunction(config.after)){
-          config.after(sails.config);
-        }
+        runConfig(config.before, sails.config);
+        require('./lib/load')(sails.config, zkHost, zkKeys, zkObjKey, config.timeout, sails, config.zkCache);
+        runConfig(config.after, sails.config);
       } catch (err) {
         /* istanbul ignore next */
         throw new Error('load zkConfig failed\n' + (err.stack || err.message || err));

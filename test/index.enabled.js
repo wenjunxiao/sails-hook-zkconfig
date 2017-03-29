@@ -20,9 +20,13 @@ describe('Enable hook tests ::', function() {
       zkConfig: {
         timeout: 10,
         zkHost: ['127.0.0.1:2181'],
-        zkKeys: ''
+        zkKeys: '',
+        before: ()=>{
+          
+        }
       },
-      key1: ''
+      key1: '',
+      port: '0'
     }, function(err, _sails) {
       if (err) return done(err);
       sails = _sails;
