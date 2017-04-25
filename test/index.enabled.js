@@ -22,7 +22,7 @@ describe('Enable hook tests ::', function() {
         zkHost: ['127.0.0.1:2181'],
         zkKeys: '',
         before: ()=>{
-          
+
         }
       },
       key1: '',
@@ -64,5 +64,57 @@ describe('Enable hook tests ::', function() {
       key2: ''
     }).should.be.instanceof(Array).and.containDeep(['key1', 'key2']);
     return true;
+  });
+
+  describe('Watch sails config changed by zookeeper', function() {
+
+    it('watch clear config path change', function(done) {
+      let lib = rewire('../index.js');
+      let watchConfig = lib.__get__('watchConfig');
+      let zkWatch = lib.__get__('zkWatch');
+      watchConfig('sails.config.test.path', (val)=>{
+        val.should.eql('value_changed');
+        done();
+      });
+      zkWatch('value_changed', '/test/path', '.test.path');
+    });
+
+    it('watch blurry config path change', function(done) {
+      let lib = rewire('../index.js');
+      let watchConfig = lib.__get__('watchConfig');
+      let zkWatch = lib.__get__('zkWatch');
+      watchConfig(['sails.config.test', 'sails.config.test1'], (val)=>{
+        val.should.eql('value_changed');
+        done();
+      });
+      zkWatch('value_changed', '/test/path', '.test.path');
+    });
+
+    it('cancel watch config by key', function() {
+      let lib = rewire('../index.js');
+      let listeners = lib.__get__('listeners');
+      let watchConfig = lib.__get__('watchConfig');
+      let removeConfigWatcher = lib.__get__('removeConfigWatcher');
+      let zkWatch = lib.__get__('zkWatch');
+      watchConfig(['sails.config.test', 'sails.config.test1'], (val)=>{});
+      Object.keys(listeners).length.should.eql(2);
+      removeConfigWatcher(['sails.config.test', 'sails.config.test1']);
+      Object.keys(listeners).length.should.eql(0);
+    });
+
+    it('cancel watch config by cb', function() {
+      let lib = rewire('../index.js');
+      let listeners = lib.__get__('listeners');
+      let watchConfig = lib.__get__('watchConfig');
+      let removeConfigWatcher = lib.__get__('removeConfigWatcher');
+      let zkWatch = lib.__get__('zkWatch');
+      let cb = (val)=>{};
+      watchConfig('sails.config.test', cb);
+      watchConfig('sails.config.test1', ()=>{});
+      Object.keys(listeners).length.should.eql(2);
+      removeConfigWatcher('sails.config.test', cb);
+      removeConfigWatcher('sails.config.test1', cb);
+      Object.keys(listeners).length.should.eql(1);
+    });
   });
 });

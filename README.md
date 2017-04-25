@@ -171,14 +171,87 @@ module.exports.zkConfig = {
 
 ## Cache
 
-  Cache config when load successfully, and then load config from cache when failed to load config.
+  Cache config when load successfully, and then load config from cache when failed to load config,
+  or load from cache directly when cache not expire.
 ```javascript
 module.exports.zkConfig = {
   zkCache: {
     enabled: false, // default false
+    expire: 0, // Cache expire time, load from cache when cache not epire.
     directory: process.env.HOME, // where cache to store
     filename: '', // cache filename
     secret: '' // encryption key
   }
 };
+```
+
+## Watcher
+
+  Watch config changes when load successfully. Watch in `zkConfig`.
+```javascript
+module.exports.zkConfig = {
+  zkWatcher: {
+    enabled: false, // default false
+    watch: (data, path)=>{
+
+    }
+  }
+};
+```
+
+  You can also use `zkWatch` with `zkPath` at anywhere.
+```javascript
+module.exports = {
+  mysql: {
+    zkPath: '/config/mysql',
+    zkWatch: (data, path)=>{
+
+    }
+  }
+};
+```
+
+  Also you can use `sails.watchConfig(configPath, callback)`. For example, reload orm when connections are changed.
+```javascript
+module.exports.bootstrap = function(cb) {
+  sails.watchConfig('sails.config.connections', ()=>{
+    sails.hooks.orm.reload();
+  });
+  cb();
+};
+```
+
+## API
+
+### `sails.watchConfig(paths: string| Array.<string>, callback)`
+
+```javascript
+sails.watchConfig('sails.config.connections', ()=>{ // watch any changes in or under sails.config.connections
+  sails.hooks.orm.reload();
+});
+
+sails.watchConfig('sails.config.redis1', ()=>{ // only watch changes in sails.config.redis1
+  // reconnect redis1
+});
+
+sails.watchConfig(['sails.config.connections', 'sails.config.redis1'], ()=>{
+});
+```
+
+### `sails.removeConfigWatcher(paths: string| Array.<string> [, callback])`
+
+  Remove the watchers of the path(s). if a `callback` is specified, only remove the callback related watcher.
+
+```javascript
+const cb = ()=>{};
+sails.watchConfig('sails.config.connections', cb);
+sails.watchConfig('sails.config.redis1', ()=>{
+
+});
+
+// All are removed.
+sails.removeConfigWatcher(['sails.config.connections', 'sails.config.redis1']);
+
+// Only `sails.config.connections` is removed
+sails.removeConfigWatcher(['sails.config.connections', 'sails.config.redis1'], cb);
 ```

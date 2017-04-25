@@ -59,7 +59,7 @@ describe('Cache config', function () {
     load(localConf, 'servers', 'secret', null, 0, null, cache).should.eql(expectConf);
   });
 
-  it('load config from cache', function () {
+  it('load config from expire cache', function () {
     fakeChild.stdout = JSON.stringify({
       success: false,
       data: {},
@@ -74,4 +74,19 @@ describe('Cache config', function () {
     load(localConf, 'servers', 'secret', null, 0, null, cache).should.eql(expectConf);
   });
 
+  it('load config from cache', function () {
+    cache.expire = 60 * 1000;
+    fakeChild.stdout = JSON.stringify({
+      success: false,
+      data: {},
+      error: {
+        message: 'cache...'
+      }
+    });
+    let localConf = {
+      secret: '/test/path'
+    };
+    let expectConf = _.assign({}, localConf, {secret: '__value_to_cache__'});
+    load(localConf, 'servers', 'secret', null, 0, null, cache).should.eql(expectConf);
+  });
 });
