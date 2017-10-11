@@ -97,6 +97,7 @@ module.exports = function (sails) {
         timeout: 30000,
         zkObjKey: 'zkPath',
         zkKeys: [],
+        zkBase: '/',
         zkCache: require('./lib/cache'),
         zkWatcher: {
           enabled: false,
@@ -119,14 +120,15 @@ module.exports = function (sails) {
         return;
       }
       let zkHost = hostsToString(sails.config.zkHost || config.zkHost);
+      let zkBase = sails.config.zkBase || config.zkBase;
       let zkKeys = keysToArray(sails.config.zkKeys || config.zkKeys);
       let zkObjKey = sails.config.zkObjKey || config.zkObjKey;
       let zkWatcher = config.zkWatcher;
       zkWatcher.zkWatch = zkWatch;
-      debug('load zkConfig start: %s %s %s %s', zkHost, zkKeys, zkObjKey, config.timeout);
+      debug('load zkConfig start: %s %s %s %s', zkHost, zkKeys, zkObjKey, config.timeout, zkBase);
       try {
         runConfig(config.before, sails.config);
-        require('./lib/load')(sails.config, zkHost, zkKeys, zkObjKey, config.timeout, sails, config.zkCache, zkWatcher);
+        require('./lib/load')(sails.config, zkHost, zkKeys, zkObjKey, config.timeout, sails, config.zkCache, zkWatcher, zkBase);
         runConfig(config.after, sails.config);
       } catch (err) {
         /* istanbul ignore next */
