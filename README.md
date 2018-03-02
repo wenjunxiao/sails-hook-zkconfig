@@ -137,6 +137,16 @@ module.exports = {
 ```
   Of course, you can also use hook in `zkConfig.js` to change key value before/after load.
 
+  Use `zkRequired` to check if the config exists.
+```js
+module.exports = {
+  mysql: {
+   zkPath: '/config/mysql',
+   zkRequired: true // Or `production` to check only in production environment
+  },
+  secret: '__this_is_default_secret__'
+};
+```
 
 ## Configuration
 
