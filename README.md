@@ -148,6 +148,16 @@ module.exports = {
 };
 ```
 
+  Use `zkIgnore` to skip config key.
+```js
+module.exports = {
+  mysql: {
+   zkPath: '/config/mysql',
+   zkIgnore: true
+  }
+};
+```
+
 ## Configuration
 
   Change the default configuration by adding ``config/zkConfig.js`` under your sails project.
