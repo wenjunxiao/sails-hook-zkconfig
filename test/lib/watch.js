@@ -7,7 +7,7 @@ const events = require('events');
 const childProcess = require('child_process');
 const zookeeper = require('node-zookeeper-client');
 const watch = require('../../lib/watch');
-const index = require('../../index');
+const load = require('../../lib/load');
 
 describe('Watch config', function () {
   const data = {
@@ -36,7 +36,7 @@ describe('Watch config', function () {
         let v = data[key];
         if (v !== undefined) {
           try {
-            v = Buffer.from(JSON.stringify(v));
+            v = Buffer.from(v);
           } catch (err) {
             v = Buffer.from((v === null ? '' : v).toString());
           }
@@ -86,13 +86,48 @@ describe('Watch config', function () {
       cb.watch = (data)=>{
         data.should.eql(val);
       };
+      cb.decoder = JSON.parse
       watch('127.0.0.1:2181', {test: {path: '/test/path'}}, {
         '/test/path': [cb]
       }, {enabled: true, watch: (data)=>{
         data.should.eql(val);
         done();
       }}).should.eql(true);
-      setData('/test/path', val);
+      setData('/test/path', JSON.stringify(val));
+    });
+    it('watch cache config changed', function (done) {
+      fakeChild.stdout = JSON.stringify({
+        success: true,
+        data: {
+          '/test/path1': '__value_to_watch__'
+        },
+        warn: {}
+      });
+      let localConf = [{
+        secret: '/test/path1'
+      }];
+      let expectConf = [{
+        secret: '__value_to_watch__'
+      }];
+      load(localConf, 'servers', 'secret', null, 0, null, {
+        enabled: true,
+        load(){
+          return {
+            '/test/path1': '__value_to_watch__'
+          }
+        },
+        fullPath(){
+          return '/'
+        },
+        save(){
+
+        }
+      }, {enabled: true, watch: (data)=>{
+        data.should.eql('__value_to_change__');
+        done();
+      }}).should.eql(expectConf);
+      setData('/test/path1', '__value_to_watch__');
+      setData('/test/path1', '__value_to_change__');
     });
   });
 });

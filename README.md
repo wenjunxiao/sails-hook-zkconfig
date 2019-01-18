@@ -158,6 +158,18 @@ module.exports = {
 };
 ```
 
+  Use `zkDecoder` to decode config value, default `JSON.parse`.
+```js
+module.exports = {
+  mysql: {
+   zkPath: '/config/mysql',
+   zkDecoder: (v)=>{
+     return JSON.parse(Buffer.from(v, 'base64').toString())
+   }
+  }
+};
+```
+
 ## Configuration
 
   Change the default configuration by adding ``config/zkConfig.js`` under your sails project.

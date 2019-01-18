@@ -48,10 +48,10 @@ describe('Synchronous loading of zookeeper config', function() {
       }
     });
     let localConf = {
-      secret: '/test/path',
+      secret: 'path', // /test/path
       other: '_other_local_value_'
     };
-    load(localConf, 'servers', 'secret').should.eql(localConf);
+    load(localConf, 'servers', 'secret', null, null, null, null, null, '/test/').should.eql(localConf);
   });
 
   it('Load config process exit error', function() {
@@ -283,6 +283,133 @@ describe('Synchronous loading of zookeeper config', function() {
         password: 'default'
       });
       load(localConf, 'servers').should.eql(expectConf);
+    });
+  });
+
+  describe('zkIgnore', function() {
+    it('ignore all', function() {
+      let localConf = {
+        zkPath: '/test/path',
+        other: '_other_local_value_',
+        zkIgnore: true
+      };
+      let expectConf =_.omit(localConf, ['zkPath', 'zkIgnore']);
+      load(localConf, 'servers').should.eql(expectConf);
+    });
+
+    it('ignore at special env', function() {
+      const env = process.env.NODE_ENV
+      process.env.NODE_ENV = '_test1'
+      let localConf1 = {
+        zkPath: '/test/path',
+        other: '_other_local_value_',
+        zkIgnore: '_test1'
+      };
+      let expectConf1 =_.omit(localConf1, ['zkPath', 'zkIgnore']);
+      load(localConf1, 'servers').should.eql(expectConf1);
+      let localConf2 = {
+        zkPath: '/test/path',
+        other: '_other_local_value_',
+        zkIgnore: '_test2'
+      };
+      let remoteConf = {
+        host: '127.0.0.1',
+        port: '6666',
+        pwd: 'xxxxx'
+      };
+      fakeChild.stdout = JSON.stringify({
+        success: true,
+        data: {
+          '/test/path': remoteConf
+        },
+        warn: {}
+      });
+      let expectConf2 =_.assign(_.omit(localConf2, ['zkPath', 'zkIgnore']), remoteConf);
+      load(localConf2, 'servers').should.eql(expectConf2);
+      process.env.NODE_ENV = env
+    });
+
+    it('ignore not special env', function() {
+      const env = process.env.NODE_ENV
+      process.env.NODE_ENV = '_test1'
+      let localConf1 = {
+        zkPath: '/test/path',
+        other: '_other_local_value_',
+        zkIgnore: '!_test1'
+      };
+      let remoteConf = {
+        host: '127.0.0.1',
+        port: '6666',
+        pwd: 'xxxxx'
+      };
+      fakeChild.stdout = JSON.stringify({
+        success: true,
+        data: {
+          '/test/path': remoteConf
+        },
+        warn: {}
+      });
+      let expectConf1 =_.assign(_.omit(localConf1, ['zkPath', 'zkIgnore']), remoteConf);
+      load(localConf1, 'servers').should.eql(expectConf1);
+      let localConf2 = {
+        zkPath: '/test/path',
+        other: '_other_local_value_',
+        zkIgnore: '!_test2'
+      };
+      let expectConf2 =_.omit(localConf2, ['zkPath', 'zkIgnore']);
+      load(localConf2, 'servers').should.eql(expectConf2);
+      process.env.NODE_ENV = env
+    });
+  });
+
+  describe('zkRequired', function() {
+    it('all required', function() {
+      fakeChild.stdout = JSON.stringify({
+        success: true,
+        data: {},
+        warn: {}
+      });
+      let localConf = {
+        zkPath: '/test/path',
+        other: '_other_local_value_',
+        zkRequired: true,
+        zkOverride: {
+          host: '0.0.0.0'
+        }
+      };
+      (function() {
+        load(localConf, 'servers');
+      }).should.throw({
+        code: 'MISSING'
+      });
+    });
+
+    it('required at special env', function() {
+      const env = process.env.NODE_ENV
+      process.env.NODE_ENV = '_test1'
+      fakeChild.stdout = JSON.stringify({
+        success: true,
+        data: {},
+        warn: {}
+      });
+      let localConf1 = {
+        zkPath: '/test/path',
+        other: '_other_local_value_',
+        zkRequired: '_test1'
+      };
+      (function() {
+        load(localConf1, 'servers');
+      }).should.throw({
+        code: 'MISSING'
+      });
+      let localConf2 = {
+        zkPath: '/test/path',
+        other: '_other_local_value_',
+        zkRequired: '_test2'
+      };
+      let expectConf2 =_.omit(localConf2, ['zkPath', 'zkRequired']);
+      load(localConf2, 'servers').should.eql(expectConf2);
+      process.env.NODE_ENV = env
     });
   });
 });
