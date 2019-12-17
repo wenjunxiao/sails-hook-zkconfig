@@ -1,6 +1,6 @@
 {
   "name": "sails-hook-zkconfig",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "sails hook for loading config from zookeeper synchronously",
   "main": "index.js",
   "dependencies": {

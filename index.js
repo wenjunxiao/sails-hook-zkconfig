@@ -1,4 +1,5 @@
 'use strict';
+/* global sails */
 /**
  * Load config from zookeeper for sails app
  * @author Wenjun Xiao
@@ -101,7 +102,7 @@ module.exports = function (sails) {
         zkCache: require('./lib/cache'),
         zkWatcher: {
           enabled: false,
-          watch: (data, path) => {
+          watch: (/*data, path*/) => {
 
           }
         }
@@ -132,7 +133,7 @@ module.exports = function (sails) {
         runConfig(config.after, sails.config);
       } catch (err) {
         /* istanbul ignore next */
-        throw new Error('load zkConfig failed\n' + (err.stack || err.message || err));
+        throw new Error('load zkConfig failed\nservers: ' +zkHost + '\n' + (err.stack || err.message || err));
       }
       debug('load zkConfig finished.');
     },
