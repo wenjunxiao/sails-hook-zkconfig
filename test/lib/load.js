@@ -412,4 +412,18 @@ describe('Synchronous loading of zookeeper config', function() {
       process.env.NODE_ENV = env
     });
   });
+
+  describe('parseResponse', function(){
+    it('invalid json response', function() {
+      (function(){
+        load.parseResponse();
+      }).should.throw(SyntaxError);
+      (function(){
+        load.parseResponse('log');
+      }).should.throw(SyntaxError);
+    });
+    it('valid json response', function() {
+      load.parseResponse('{"success":true}').should.eql({success:true});
+    });
+  });
 });

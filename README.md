@@ -253,6 +253,38 @@ module.exports.bootstrap = function(cb) {
 };
 ```
 
+## Local
+
+  If there is no zookeeper server, you can use local file storage instead of zookeeper.
+  There are two ways to set up local storage.
+  The first way is to set the environment variable `LOCAL_ZKCONFIG_PATH` 
+  to point to the local configuration storage root directory, such as
+```bash
+export LOCAL_ZKCONFIG_PATH=/var/lib/local_zk
+```
+  The second way is to configure `zkHost` to point to the local configuration storage
+  root directory (can add the prefix `file://`), such as
+```javascript
+module.exports = {
+  zkHost: '/var/lib/local_zk',
+  // zkHost: 'file:///var/lib/local_zk', // with the prefix `file://`
+};
+```
+  All data must be stored in `zkPath` relative to the storage root directory configured above,
+  or with suffix `.json`.
+  For example, the actual storage location of `/config/mysql` is
+  `/var/lib/local_zk/config/mysql` or `/var/lib/local_zk/config/mysql.json`.
+  The content of the file is a JSON containing a `data` field and a `version` field,
+  data is the actual configuration content, version represents the configuration version.
+  For example,
+```json
+{"data":{"host":"127.0.0.1","port":3306},"version":1}
+```
+  Or
+```json
+{"data":"mysql://user:password@127.0.0.1:3306/database","version":1}
+``` 
+
 ## API
 
 ### `sails.watchConfig(paths: string| Array.<string>, callback)`
