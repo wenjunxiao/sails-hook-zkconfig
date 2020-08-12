@@ -283,7 +283,30 @@ module.exports = {
   Or
 ```json
 {"data":"mysql://user:password@127.0.0.1:3306/database","version":1}
-``` 
+```
+  
+  To share local configuration, also provide a simple http server
+```bash
+$ zk-local --base /var/lib/local_zk --port 5181 # global install
+$ ./node_modules/.bin/zk-local --base /var/lib/local_zk --port 5181 # project install
+```
+  and then configure `zkHost` to `http://126.0.0.1:5181`.
+
+## Variables
+
+  You can use the following variables as zkpath, only valid when using remote zookeeper
+  not local file system.
+* `$address` current zookeeper client address `{"address":"","port":}`
+* `$ip` current zookeeper client ip
+* `$port` current zookeeper client port
+
+```js
+module.exports = {
+  appHost: {
+    zkPath: '$ip'
+  }
+}
+```
 
 ## API
 
