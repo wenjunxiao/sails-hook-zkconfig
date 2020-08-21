@@ -170,6 +170,34 @@ module.exports = {
 };
 ```
 
+  Use `zkInit` to init config key when not exists.
+```js
+module.exports = {
+  mysql: {
+   zkPath: '/config/key',
+   zkInit: ()=>{
+     return JSON.stringify({now: Date.now()});
+   }
+  }
+};
+```
+
+  Use `zkReload` to enable reload config key when needed.
+```js
+module.exports = {
+  mysql: {
+   zkPath: '/config/key',
+   zkReload: true,
+  }
+};
+// reload when needed
+sails.zkReloader.reload('sails.config.mysql', function(err, data){
+  if (!err) {
+    sails.config.mysql = data;
+  }
+});
+```
+
 ## Configuration
 
   Change the default configuration by adding ``config/zkConfig.js`` under your sails project.

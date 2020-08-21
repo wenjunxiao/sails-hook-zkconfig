@@ -126,10 +126,11 @@ module.exports = function (sails) {
       let zkObjKey = sails.config.zkObjKey || config.zkObjKey;
       let zkWatcher = config.zkWatcher;
       zkWatcher.zkWatch = zkWatch;
+      sails.zkReloader = require('./lib/reloader')(zkHost);
       debug('load zkConfig start: %s %s %s %s', zkHost, zkKeys, zkObjKey, config.timeout, zkBase);
       try {
         runConfig(config.before, sails.config);
-        require('./lib/load')(sails.config, zkHost, zkKeys, zkObjKey, config.timeout, sails, config.zkCache, zkWatcher, zkBase);
+        require('./lib/load')(sails.config, zkHost, zkKeys, zkObjKey, config.timeout, sails, config.zkCache, zkWatcher, zkBase, sails.zkReloader);
         runConfig(config.after, sails.config);
       } catch (err) {
         /* istanbul ignore next */
