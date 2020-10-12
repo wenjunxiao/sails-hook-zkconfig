@@ -170,6 +170,26 @@ module.exports = {
 };
 ```
 
+  Use `zkAfter` to adjust config value after config decoded and merged,
+```js
+module.exports = {
+  mysql: {
+    zkPath: '/config/mysql',
+    port: 3306, // value will not be passed to `zkAfter`
+    zkDefault: { // values will be passed to `zkAfter`
+      port: 3306
+    },
+    zkOverride: { // values will be passed to `zkAfter`
+      adapter: 'sails-mysql-override'
+    },
+    zkAfter: (d)=>{
+      d.url = `mysql://${d.user}:${d.password}@${d.host}:${d.port}/${d.database}`;
+      return d;
+    }
+  }
+};
+```
+
   Use `zkInit` to init config key when not exists.
 ```js
 module.exports = {

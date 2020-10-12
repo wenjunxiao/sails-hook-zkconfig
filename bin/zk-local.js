@@ -8,6 +8,7 @@ const qsParse = require('querystring').parse;
 const qsStringify = require('querystring').stringify;
 const FileAdapter = require('../lib/file').FileAdapter;
 const zookeeper = require('../lib/file').wrap(require('node-zookeeper-client'));
+const pkg = require('../package.json');
 
 function getArg (name) {
   let pos = process.argv.indexOf('--' + name);
@@ -17,6 +18,15 @@ function getArg (name) {
 const base = getArg('base');
 const adapter = new FileAdapter(base);
 
+function redirectTo (res, location) {
+  res.writeHead(302, {
+    location
+  });
+  return res.end();
+}
+
+let icon = null;
+let startup = new Date();
 const routes = {
   'GET /api/getData': function (req, res) {
     adapter.getData(req.query.path, (err, data, info) => {
@@ -53,7 +63,15 @@ const routes = {
       if (body.parent) {
         body.path = path.resolve(body.parent, body.path);
       }
-      console.error('create => %j', body);
+      if (body.data) {
+        try {
+          let data = JSON.parse(body.data);
+          if (typeof data === 'object') {
+            body.data = data;
+          }
+        } catch (unused) {/* ignore parse error */ }
+      }
+      console.error('[%s] create => %s', new Date().toISOString(), body.path);
       if (body.data || body.node === 'data') {
         adapter.create(body.path, body.data || '', {
           ip: req.socket.remoteAddress
@@ -65,9 +83,7 @@ const routes = {
             }));
           }
           if (body.redirect) {
-            return res.writeHead(302, {
-              location: body.redirect
-            }).end();
+            return redirectTo(res, body.redirect);
           }
           return res.end(JSON.stringify({
             error: err && { message: err.message },
@@ -83,9 +99,7 @@ const routes = {
             }));
           }
           if (body.redirect) {
-            return res.writeHead(302, {
-              location: body.redirect
-            }).end();
+            return redirectTo(res, body.redirect);
           }
           return res.end(JSON.stringify({
             error: err && { message: err.message },
@@ -111,6 +125,15 @@ const routes = {
       } else {
         body = JSON.parse(data || '{}');
       }
+      if (body.data) {
+        try {
+          let data = JSON.parse(body.data);
+          if (typeof data === 'object') {
+            body.data = data;
+          }
+        } catch (unused) {/* ignore parse error */ }
+      }
+      console.error('[%s] update => %s', new Date().toISOString(), body.path);
       adapter.setData(body.path, body.data || '', {
         ip: req.socket.remoteAddress
       }, (err, path) => {
@@ -121,9 +144,7 @@ const routes = {
           }));
         }
         if (body.redirect) {
-          return res.writeHead(302, {
-            location: body.redirect
-          }).end();
+          return redirectTo(res, body.redirect);
         }
         return res.end(JSON.stringify({
           error: err && { message: err.message },
@@ -139,52 +160,55 @@ const routes = {
   },
   'GET /api/delete': function (req, res) {
     const full = path.resolve(base, '.' + req.query.path);
-    console.error('delete =>', full + '.json');
+    console.error('[%s] delete =>', new Date().toISOString(), full + '.json');
     fs.unlink(full + '.json', err => {
       if (err) {
-        console.error('delete =>', full);
+        console.error('[%s] delete =>', new Date().toISOString(), full);
         return fs.unlink(full, err => {
           if (err) {
             return res.end(JSON.stringify({
               error: { message: err.message },
             }));
           }
-          return res.writeHead(302, {
-            location: req.query.redirect
-          }).end();
+          return redirectTo(res, req.query.redirect);
         });
       }
-      return res.writeHead(302, {
-        location: req.query.redirect
-      }).end();
+      return redirectTo(res, req.query.redirect);
     });
   },
   'GET /api/rmdir': function (req, res) {
     const full = path.resolve(base, '.' + req.query.path);
-    console.error('rmdir =>', full);
+    console.error('[%s] rmdir =>', new Date().toISOString(), full);
     fs.rmdir(full, err => {
       if (err) {
         return res.end(JSON.stringify({
           error: { message: err.message },
         }));
       }
-      return res.writeHead(302, {
-        location: req.query.redirect
-      }).end();
+      return redirectTo(res, req.query.redirect);
     });
   },
+  'POST /favicon.ico': function (req, res) {
+    if (!icon && req.query.icon) {
+      icon = Buffer.from(decodeURIComponent(req.query.icon).replace(/^.*;base64,/, ''), 'base64');
+    }
+    return res.end();
+  },
   'GET /favicon.ico': function (req, res) {
-    return res.writeHead(200, {
+    res.writeHead(200, {
       'Content-Type': 'image/x-icon'
-    }).end();
+    });
+    return res.end(icon || '');
   },
   'GET /': function (req, res) {
     res.writeHead(200, {
       'Content-Type': 'text/html;charset=utf-8'
     });
-    res.write('<html><head><title>Local File ZK</title></head><body>');
-    res.write('<h1>Local File Zookeeper</h1><hr><pre>');
+    res.write('<html><head><title>Local File Zookeeper</title></head><body>');
+    res.write(`<h1>Local File Zookeeper - ${pkg.version}</h1>Started at <span id="time"></span><hr><pre>`);
+    res.write(`<script>document.getElementById('time').innerText = new Date('${startup.toISOString()}').toLocaleString();</script>`);
     res.write('<a href="node/">node</a><br/>');
+    createIcon(res, req);
     return res.end('</body></html>');
   },
   'POST /api/sync': function (req, res) {
@@ -210,7 +234,7 @@ const routes = {
                         nodes: []
                       }));
                     }
-                    console.error('sync node =>', node);
+                    console.error('[%s] sync node =>', new Date().toISOString(), node);
                     return client.setData(node, data, function (err) {
                       if (err) {
                         return res.end(JSON.stringify({
@@ -226,7 +250,7 @@ const routes = {
                     error: { message: err.message },
                   }));
                 }
-                console.error('sync node =>', node);
+                console.error('[%s] sync node =>', new Date().toISOString(), node);
                 return res.end(JSON.stringify({
                   nodes: [node]
                 }));
@@ -251,7 +275,7 @@ const routes = {
                     }
                     return reject(err);
                   }
-                  console.error('sync node =>', fullNode);
+                  console.error('[%s] sync node =>', new Date().toISOString(), fullNode);
                   return resolve(fullNode);
                 });
               });
@@ -261,7 +285,7 @@ const routes = {
               nodes: nodes.filter(s => s)
             }));
           }).catch(err => {
-            console.error('sync error =>', err);
+            console.error('[%s] sync error =>', new Date().toISOString(), err);
             return res.end(JSON.stringify({
               error: { message: err.message },
             }));
@@ -273,13 +297,35 @@ const routes = {
   },
 };
 
+function createIcon (res) {
+  if (!icon) {
+    res.write('<script>');
+    res.write('var canvas = document.createElement("canvas");');
+    res.write('var ctx0 = canvas.getContext("2d");');
+    res.write(`var font = ctx0.font = ctx0.font.split(' ').map(s => {
+      if (/\\d+px/.test(s)) {
+        return '30px';
+      }
+      return s;
+    }).join(' ');
+    canvas.width = ctx0.measureText("ZK").width;
+    canvas.height = parseInt(font);
+    var ctx = canvas.getContext("2d");
+    ctx.font = font;
+    ctx.fillStyle = "DodgerBlue";
+    ctx.fillText("ZK", 0, canvas.height - 2);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/favicon.ico?icon=' + encodeURIComponent(canvas.toDataURL()));
+    xhr.send();`);
+    res.write('</script>');
+  }
+}
+
 function renderNode (node, req, res) {
   let full = path.resolve(base, '.' + node);
   fs.readdir(full, (err, files) => {
     if (!err && !node.endsWith('/')) {
-      return res.writeHead(302, {
-        location: '/node' + node + '/'
-      }).end();
+      return redirectTo(res, '/node' + node + '/');
     }
     files = files || [];
     res.writeHead(200, {
@@ -298,13 +344,22 @@ function renderNode (node, req, res) {
       res.write('</pre><hr>');
       return adapter.getData(node, (err, data) => {
         if (err) {
-          console.error('error =>', err);
+          console.error('[%s] error =>', new Date().toISOString(), err);
           return res.end(`${err.message}</body></html>`);
         }
         res.write('<form method="post" action="/api/update">');
         res.write(`<input type="hidden" name="redirect" value="/node${node}${query}" />`);
         res.write(`<input type="hidden" name="path" value="${node}" />`);
-        res.write(`<textarea name="data" style="width:100%;" rows="5">${data.toString('utf8')}</textarea>`);
+        if (req.query.format === 'false') {
+          res.write(`<textarea name="data" style="width:100%;" rows="5">${data.toString('utf8')}</textarea>`);
+        } else {
+          try {
+            data = JSON.stringify(JSON.parse(data.toString('utf8')), null, 2);
+          } catch (unused) {/* ignore error*/
+            data = data.toString('utf8');
+          }
+          res.write(`<textarea name="data" style="width:100%;" rows="${data.split('\n').length * 2}">${data}</textarea>`);
+        }
         res.write('<input type="submit" value="Update" />');
         if (req.query.delete === 'on') {
           res.write(`<a href="/api/delete?path=${node}&redirect=/node${path.dirname(node)}/${query}" style="float:right;">Delete</a>`);
@@ -335,23 +390,57 @@ function renderNode (node, req, res) {
     if (req.query.delete === 'on' && files.length === 0) {
       res.write(`<a href="/api/rmdir?path=${node}&redirect=/node${path.dirname(node)}/${query}" style="float:right;">Delete</a>`);
     }
+    createIcon(res);
     return res.end('</form></body></html>');
   });
 }
 
+let tokens = getArg('auth');
+if (tokens) {
+  if (tokens.split(':').length > 1) {
+    tokens = tokens.split(',');
+  } else {
+    tokens = fs.readFileSync(tokens, 'utf-8').split('\n');
+  }
+  if (Array.isArray(tokens)) {
+    tokens = tokens.reduce((r, d) => {
+      let k = Buffer.from(d, 'utf-8').toString('base64');
+      r[k] = d.split(':')[0];
+      return r;
+    }, {});
+  }
+}
+
 const app = http.createServer(function (req, res) {
+  req.ip = req.socket.remoteAddress;
+  if (tokens) {
+    let authorization = req.headers.authorization;
+    if (authorization) {
+      authorization = authorization.substring(authorization.indexOf(' ') + 1);
+    }
+    req.user = tokens[authorization];
+    if (!req.user && req.ip !== '127.0.0.1' && !req.url.startsWith('/favicon.ico')) {
+      res.writeHead(401, {
+        'WWW-AUTHENTICATE': 'Basic realm="basic"'
+      });
+      createIcon(res);
+      return res.end();
+    } else if (!req.user) {
+      req.user = 'anonymous';
+    }
+  } else {
+    req.user = 'anonymous';
+  }
   let url = urlParse(req.url);
   req.query = qsParse(url.query || '');
   const key = req.method + ' ' + url.pathname;
   const fn = routes[key];
-  console.error('request =>', req.method, req.url, req.socket.remoteAddress);
+  console.error('[%s] request =>', new Date().toISOString(), req.method, req.url, req.socket.remoteAddress, req.user);
   if (fn) {
     return fn(req, res);
   } else if (/^\/node(\/.*)?$/.test(url.pathname)) {
     if (!RegExp.$1) {
-      return res.writeHead(302, {
-        location: '/node/'
-      }).end();
+      return redirectTo(res, '/node/');
     }
     return renderNode(RegExp.$1, req, res);
   }
@@ -359,6 +448,6 @@ const app = http.createServer(function (req, res) {
   return res.end();
 });
 
-app.listen(parseInt(getArg('port'), 10) || 5181, '0.0.0.0', function () {
-  console.error('zk local listen => %j', app.address());
+app.listen(parseInt(getArg('port'), 10) || 5181, getArg('host') || '0.0.0.0', function () {
+  console.error('[%s] zk local listen => %j %s', new Date().toISOString(), app.address(), !!tokens);
 });
