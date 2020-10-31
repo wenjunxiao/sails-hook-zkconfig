@@ -29,6 +29,11 @@ function filterExpectData() {
         callback(new Error('NO_NODE[-101]'));
       }
     };
+    client.create = function (key, val) {
+      let callback = arguments[arguments.length - 1];
+      data[key] = val;
+      callback(null);
+    };
     client.connect = function() {
       client.emit('connected');
     };
