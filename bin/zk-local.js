@@ -33,7 +33,9 @@ const routes = {
       if (err) {
         return res.end(JSON.stringify({
           error: {
-            message: err.message || err.toString()
+            message: err.message || err.toString(),
+            code: err.code,
+            name: err.name,
           }
         }));
       }
@@ -41,6 +43,23 @@ const routes = {
         error: null,
         data: data.toString('utf-8'),
         info
+      }));
+    });
+  },
+  'GET /api/getChildren': function (req, res) {
+    adapter.getChildren(req.query.path, (err, children) => {
+      if (err) {
+        return res.end(JSON.stringify({
+          error: {
+            message: err.message || err.toString(),
+            code: err.code,
+            name: err.name,
+          }
+        }));
+      }
+      return res.end(JSON.stringify({
+        error: null,
+        data: children,
       }));
     });
   },
@@ -78,7 +97,11 @@ const routes = {
         }, ['true', true].includes(body.persistent), (err, path) => {
           if (err) {
             return res.end(JSON.stringify({
-              error: { message: err.message },
+              error: {
+                message: err.message,
+                code: err.code,
+                name: err.name,
+              },
               path,
             }));
           }
@@ -86,7 +109,11 @@ const routes = {
             return redirectTo(res, body.redirect);
           }
           return res.end(JSON.stringify({
-            error: err && { message: err.message },
+            error: err && {
+              message: err.message,
+              code: err.code,
+              name: err.name,
+            },
             path,
           }));
         });
@@ -94,7 +121,11 @@ const routes = {
         fs.mkdir(path.resolve(base, '.' + body.path), err => {
           if (err) {
             return res.end(JSON.stringify({
-              error: { message: err.message },
+              error: {
+                message: err.message,
+                code: err.code,
+                name: err.name,
+              },
               path: body.path,
             }));
           }
@@ -102,7 +133,11 @@ const routes = {
             return redirectTo(res, body.redirect);
           }
           return res.end(JSON.stringify({
-            error: err && { message: err.message },
+            error: err && {
+              message: err.message,
+              code: err.code,
+              name: err.name,
+            },
             path: body.path,
           }));
         });
@@ -139,7 +174,11 @@ const routes = {
       }, (err, path) => {
         if (err) {
           return res.end(JSON.stringify({
-            error: { message: err.message },
+            error: {
+              message: err.message,
+              code: err.code,
+              name: err.name,
+            },
             path,
           }));
         }
@@ -147,7 +186,11 @@ const routes = {
           return redirectTo(res, body.redirect);
         }
         return res.end(JSON.stringify({
-          error: err && { message: err.message },
+          error: err && {
+            message: err.message,
+            code: err.code,
+            name: err.name,
+          },
           path,
         }));
       });
@@ -167,7 +210,11 @@ const routes = {
         return fs.unlink(full, err => {
           if (err) {
             return res.end(JSON.stringify({
-              error: { message: err.message },
+              error: {
+                message: err.message,
+                code: err.code,
+                name: err.name,
+              },
             }));
           }
           return redirectTo(res, req.query.redirect);
